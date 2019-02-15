@@ -1,40 +1,44 @@
 #!/usr/bin/env groovy
+import groovy.transform.Field
 
-def call(version='3.7.0', method=null, cl) {
-  def metarunner = 'pyenv'
+@Field static final metaRunner = 'pyenv'
+@Field metaRunnerRoot = env.PYENV_ROOT ?: env.HOME ? "${HOME}/.${metaRunner}" : "${JENKINS_HOME}/.${metaRunner}"
+
+
+def call(String version='3.7.0', method=null, cl) {
   def utils = new info.pedrocesar.utils()
 
   print "Setting up Python version ${version}!"
-  
-  if (!fileExists("${JENKINS_HOME}/.${metarunner}/bin/${metarunner}")) {
-    installPyenv(metarunner)
+
+  if (0 != sh (returnStatus: true, script: "which ${metaRunner}") && !fileExists("${metaRunnerRoot}/bin/${metaRunner}")) {
+    installPyenv()
   }
 
-  if (!fileExists("${JENKINS_HOME}/.${metarunner}/versions/${version}/")) {
-    withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/bin/:$PATH"]) {
-      utils.installVersion(metarunner, version)
+  if (!fileExists("${metaRunnerRoot}/versions/${version}/")) {
+    withEnv(["PATH=${metaRunnerRoot}/bin/:$PATH", "PYENV_ROOT=${metaRunnerRoot}"]) {
+      utils.installVersion(metaRunner, version)
     }
   }
 
-  withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/shims:${JENKINS_HOME}/.${metarunner}/bin/:$PATH", "NODENV_SHELL=sh"]) {
-    sh "${metarunner} rehash && ${metarunner} local ${version}"
+  withEnv(["PATH=${metaRunnerRoot}/shims:${metaRunnerRoot}/bin/:$PATH", "PYENV_ROOT=${metaRunnerRoot}", "PYENV_SHELL=sh"]) {
+    sh "${metaRunner} rehash && ${metaRunner} local ${version}"
     cl()
   }
 
   if (method == 'clean') {
     print "Removing Python ${version}!!!"
-    withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/bin/:$PATH"]) {
-      utils.deleteVersion(metarunner, version)
+    withEnv(["PATH=${metaRunnerRoot}/bin/:$PATH", "PYENV_ROOT=${metaRunnerRoot}"]) {
+      utils.deleteVersion(metaRunnerRoot, version)
     }
   } 
 }
 
-def installPyenv(metarunner) {
-  print "Installing ${metarunner}"
-  new info.pedrocesar.utils().installMetarunner(metarunner)
+def installPyenv() {
+  print "Installing ${metaRunner}"
+  new info.pedrocesar.utils().installMetaRunner(metaRunner, metaRunnerRoot)
 }
 
-def purgeAll(metarunner) {
-  print "Removing all versions of ${metarunner}"
-  new info.pedrocesar.utils().purgeAllVersions(metarunner)
+def purgeAll() {
+  print "Removing all versions of ${metaRunner}"
+  new info.pedrocesar.utils().purgeAllVersions(metaRunnerRoot)
 }
