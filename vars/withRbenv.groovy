@@ -1,41 +1,45 @@
 #!/usr/bin/env groovy
+import groovy.transform.Field
 
-def call(version='2.5.1', method=null, cl) {
-  def metarunner = 'rbenv'
+@Field metaRunner = 'rbenv'
+@Field metaRunnerRoot = env.NODENV_ROOT ?: env.HOME ? "${HOME}/.${metaRunner}" : "${JENKINS_HOME}/.${metaRunner}"
+
+
+def call(String version='2.5.1', method=null, cl) {
   def utils = new info.pedrocesar.utils()
 
   print "Setting up Ruby version ${version}!"
-  
-  if (!fileExists("${JENKINS_HOME}/.${metarunner}/bin/${metarunner}")) {
-    installRbenv(metarunner)
-    sh "git clone https://github.com/${metarunner}/ruby-build.git ${JENKINS_HOME}/.${metarunner}/plugins/ruby-build"
+
+  if (0 != sh (returnStatus: true, script: "which ${metaRunner}") && !fileExists("${metaRunnerRoot}/bin/${metaRunner}")) {
+    installRbenv(metaRunner)
+    sh "git clone https://github.com/${metaRunner}/ruby-build.git ${metaRunnerRoot}/plugins/ruby-build"
   }
 
-  if (!fileExists("${JENKINS_HOME}/.${metarunner}/versions/${version}/")) {
-    withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/bin/:$PATH"]) {
-      utils.installVersion(metarunner, version)
+  if (!fileExists("${metaRunnerRoot}/versions/${version}/")) {
+    withEnv(["PATH=${metaRunnerRoot}/bin/:$PATH"]) {
+      utils.installVersion(metaRunner, version)
     }
   }
 
-  withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/shims:${JENKINS_HOME}/.${metarunner}/bin/:$PATH", "NODENV_SHELL=sh"]) {
-    sh "${metarunner} rehash && ${metarunner} local ${version}"
+  withEnv(["PATH=${metaRunnerRoot}/shims:${metaRunnerRoot}/bin/:$PATH", "RBENV_SHELL=sh"]) {
+    sh "${metaRunner} rehash && ${metaRunner} local ${version}"
     cl()
   }
 
   if (method == 'clean') {
     print "Removing Ruby ${version}!!!"
-    withEnv(["PATH=${JENKINS_HOME}/.${metarunner}/bin/:$PATH"]) {
-      utils.deleteVersion(metarunner, version)
+    withEnv(["PATH=${metaRunnerRoot}/bin/:$PATH"]) {
+      utils.deleteVersion(metaRunner, version)
     }
   } 
 }
 
-def installRbenv(metarunner) {
-  print "Installing ${metarunner}"
-  new info.pedrocesar.utils().installMetarunner(metarunner)
+def installRbenv() {
+  print "Installing ${metaRunner}"
+  new info.pedrocesar.utils().installMetaRunner(metaRunner, metaRunnerRoot)
 }
 
-def purgeAll(metarunner) {
-  print "Removing all versions of ${metarunner}"
-  new info.pedrocesar.utils().purgeAllVersions(metarunner)
+def purgeAll() {
+  print "Removing all versions of ${metaRunner}"
+  new info.pedrocesar.utils().purgeAllVersions(metaRunnerRoot)
 }
