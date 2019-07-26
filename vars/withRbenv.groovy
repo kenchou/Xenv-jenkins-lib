@@ -2,7 +2,7 @@
 import groovy.transform.Field
 
 @Field metaRunner = 'rbenv'
-@Field metaRunnerRoot = env.NODENV_ROOT ?: env.HOME ? "${HOME}/.${metaRunner}" : "${JENKINS_HOME}/.${metaRunner}"
+@Field metaRunnerRoot = env.RBENV_ROOT ?: env.HOME ? "${HOME}/.${metaRunner}" : "${JENKINS_HOME}/.${metaRunner}"
 
 
 def call(String version='2.5.1', method=null, cl) {
