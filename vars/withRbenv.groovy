@@ -11,7 +11,8 @@ def call(String version='2.5.1', method=null, cl) {
   print "Setting up Ruby version ${version}!"
 
   if (0 != sh (returnStatus: true, script: "which ${metaRunner}") && !fileExists("${metaRunnerRoot}/bin/${metaRunner}")) {
-    installRbenv(metaRunner)
+    print "Installing ${metaRunner}"
+    new info.pedrocesar.utils().installMetaRunner(metaRunner, metaRunnerRoot)
     sh "git clone https://github.com/${metaRunner}/ruby-build.git ${metaRunnerRoot}/plugins/ruby-build"
   }
 
@@ -31,12 +32,7 @@ def call(String version='2.5.1', method=null, cl) {
     withEnv(["PATH=${metaRunnerRoot}/bin/:$PATH"]) {
       utils.deleteVersion(metaRunner, version)
     }
-  } 
-}
-
-def installRbenv() {
-  print "Installing ${metaRunner}"
-  new info.pedrocesar.utils().installMetaRunner(metaRunner, metaRunnerRoot)
+  }
 }
 
 def purgeAll() {
