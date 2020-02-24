@@ -49,5 +49,6 @@ def installMetaRunner(String metaRunner, String metaRunnerRoot){
 
 
 def installVersion(metaRunner, version) {
+  sh "${metaRunner} install -l"
   sh "${metaRunner} install ${version}"
 }
